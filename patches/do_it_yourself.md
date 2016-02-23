@@ -1,4 +1,13 @@
 # If you want to build your own cgminer with patches:
+Prerequise:
+-
+sudo apt-get update
+
+sudo apt-get install build-essential autoconf automake libtool pkg-config libcurl3-dev libudev-dev
+
+Download Sources:
+-
+(This will give you original cgminer 4.6.1 from ckolivas source)
 
 git clone https://github.com/ckolivas/cgminer.git
 
@@ -6,9 +15,9 @@ cd cgminer
 
 git checkout 9afd0a216a0f95adb650e4818f24af1a61ad837d
 
-This will give you original cgminer 4.6.1 from ckolivas source
 
-then download patches:
+
+Download patches:
 -
 for BTC hexminer:
 
@@ -22,15 +31,17 @@ for both (extranonce optimisation from nicehash):
 
 wget https://raw.githubusercontent.com/wareck/cgminer-hexminer/master/patches/extranonce-patch.patch
 
-if you want to use Hexminer BTC:
+Patching :
+-
+If you want to use Hexminer BTC:
 
 patch -p1 <rev_9afd0a216a0f95adb650e4818f24af1a61ad837d.patch
 
-if you want to use Hexminer Scrypt:
+If you want to use Hexminer Scrypt:
 
 patch -p1 <srev_9afd0a216a0f95adb650e4818f24af1a61ad837d.patch
 
-if you want add extranonce options (nicehash special optminisation):
+If you want add extranonce options (nicehash special optminisation):
 
 patch -p1 <extranonce-patch.patch
 
