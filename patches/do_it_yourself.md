@@ -26,9 +26,12 @@ patch -p1 <extranonce-patch.patch
 
 Compilation:
 for BTC Hexminer
-./autogen.sh  
+./autogen.sh --enable-hexminera --enable-hexminerb  --enable-hexmineru --enable-hexminerc  --enable-hexminer8 --enable-hexminerm --enable-hexminerr --enable-hexminerbe200 --enable-hexminer3 
+./configure --enable-hexminera --enable-hexminerb  --enable-hexmineru --enable-hexminerc  --enable-hexminer8 --enable-hexminerm --enable-hexminerr --enable-hexminerbe200 --enable-hexminer3 
 make
 
 for Scrypt Hexminer:
 ./autogen.sh --enable-hexminers
+./configure --enable-hexminers
 make
+
