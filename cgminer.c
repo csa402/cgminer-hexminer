@@ -93,6 +93,42 @@ char *curly = ":D";
 #include "driver-cointerra.h"
 #endif
 
+#ifdef USE_HEXMINERA
+#include "driver-hexminera.h"
+#endif
+
+#ifdef USE_HEXMINERB
+#include "driver-hexminerb.h"
+#endif
+
+#ifdef USE_HEXMINERC
+#include "driver-hexminerc.h"
+#endif
+
+#ifdef USE_HEXMINERU
+#include "driver-hexmineru.h"
+#endif
+
+#ifdef USE_HEXMINER8
+#include "driver-hexminer8.h"
+#endif
+
+#ifdef USE_HEXMINERM
+#include "driver-hexminerm.h"
+#endif
+
+#ifdef USE_HEXMINERR
+#include "driver-hexminerr.h"
+#endif
+
+#ifdef USE_HEXMINERBE200
+#include "driver-hexminerbe200.h"
+#endif
+
+#ifdef USE_HEXMINER3
+#include "driver-hexminer3.h"
+#endif
+
 #ifdef USE_HASHFAST
 #include "driver-hashfast.h"
 #endif
@@ -155,8 +191,8 @@ bool opt_loginput;
 bool opt_compact;
 const int opt_cutofftemp = 95;
 int opt_log_interval = 5;
-int opt_queue = 9999;
-static int max_queue = 1;
+int opt_queue = 60;
+static int max_queue = 2;
 int opt_scantime = -1;
 int opt_expiry = 120;
 static const bool opt_time = true;
@@ -185,7 +221,7 @@ bool use_curses;
 #endif
 static bool opt_widescreen;
 static bool alt_status;
-static bool switch_status;
+static bool switch_status  = true;
 static bool opt_submit_stale = true;
 static int opt_shares;
 bool opt_fail_only;
@@ -207,7 +243,8 @@ int opt_api_mcast_port = 4028;
 bool opt_api_network;
 bool opt_delaynet;
 bool opt_disable_pool;
-static bool no_work;
+//static 
+bool no_work;
 #ifdef USE_ICARUS
 char *opt_icarus_options = NULL;
 char *opt_icarus_timing = NULL;
@@ -228,6 +265,30 @@ static char *opt_set_avalon2_voltage;
 #endif
 #ifdef USE_HASHRATIO
 #include "driver-hashratio.h"
+#endif
+#ifdef USE_HEXMINERA
+char *opt_hexminera_options = NULL;
+#endif
+#ifdef USE_HEXMINERB
+char *opt_hexminerb_options = NULL;
+#endif
+#ifdef USE_HEXMINERC
+char *opt_hexminerc_options = NULL;
+#endif
+#ifdef USE_HEXMINER8
+char *opt_hexminer8_options = NULL;
+#endif
+#ifdef USE_HEXMINERBE200
+char *opt_hexminerbe200_options = NULL;
+#endif
+#ifdef USE_HEXMINERM
+char *opt_hexminerm_options = NULL;
+#endif
+#ifdef USE_HEXMINERR
+char *opt_hexminerr_options = NULL;
+#endif
+#ifdef USE_HEXMINER3
+char *opt_hexminer3_options = NULL;
 #endif
 #ifdef USE_KLONDIKE
 char *opt_klondike_options = NULL;
@@ -276,7 +337,10 @@ char *opt_usb_select = NULL;
 int opt_usbdump = -1;
 bool opt_usb_list_all;
 cgsem_t usb_resource_sem;
+#if defined(USE_HEXMINERA) || defined(USE_HEXMINERB) || defined(USE_HEXMINERC) || defined(USE_HEXMINERU) || defined(USE_HEXMINER8) || defined(USE_HEXMINERM) || defined(USE_HEXMINERR) || defined(USE_HEXMINERBE200) || defined(USE_HEXMINER3)
+#else
 static pthread_t usb_poll_thread;
+#endif
 static bool usb_polling;
 #endif
 
@@ -326,8 +390,8 @@ pthread_rwlock_t devices_lock;
 static pthread_mutex_t lp_lock;
 static pthread_cond_t lp_cond;
 
-pthread_mutex_t restart_lock;
-pthread_cond_t restart_cond;
+//pthread_mutex_t restart_lock;
+//pthread_cond_t restart_cond;
 
 pthread_cond_t gws_cond;
 
@@ -346,7 +410,9 @@ int64_t total_getworks, total_stale, total_discarded;
 double total_diff_accepted, total_diff_rejected, total_diff_stale;
 static int staged_rollable;
 unsigned int new_blocks;
-static unsigned int work_block;
+//static
+unsigned int work_block;
+unsigned int	work_pool_update;
 unsigned int found_blocks;
 
 unsigned int local_work;
@@ -357,6 +423,11 @@ static struct pool *currentpool = NULL;
 
 int total_pools, enabled_pools;
 enum pool_strategy pool_strategy = POOL_FAILOVER;
+
+#if defined(USE_HEXMINERA) || defined(USE_HEXMINERB) || defined(USE_HEXMINERC) || defined(USE_HEXMINERU) || defined(USE_HEXMINER8) || defined(USE_HEXMINERM) || defined(USE_HEXMINERR) || defined(USE_HEXMINERBE200) || defined(USE_HEXMINER3)
+enum default_hex_miner default_hex_miner = D_HEXA;
+#endif
+
 int opt_rotate_period;
 static int total_urls, total_users, total_passes, total_userpasses;
 
@@ -709,9 +780,11 @@ struct pool *current_pool(void)
 {
 	struct pool *pool;
 
-	cg_rlock(&control_lock);
+	//cg_rlock
+	cg_wlock(&control_lock);
 	pool = currentpool;
-	cg_runlock(&control_lock);
+	cg_wunlock(&control_lock);
+	//cg_runlock
 
 	return pool;
 }
@@ -789,6 +862,72 @@ void get_intrange(char *arg, int *val1, int *val2)
 		*val2 = *val1;
 }
 
+
+#ifdef USE_HEXMINERA
+static char *set_default_to_a(enum default_hex_miner *which)
+{
+	*which = D_HEXA;
+	return NULL;
+}
+#endif
+
+
+#ifdef USE_HEXMINERB
+static char *set_default_to_b(enum default_hex_miner *which)
+{
+	*which = D_HEXB;
+	return NULL;
+}
+#endif
+
+#ifdef USE_HEXMINERC
+static char *set_default_to_c(enum default_hex_miner *which)
+{
+	*which = D_HEXC;
+	return NULL;
+}
+#endif
+
+#ifdef USE_HEXMINER8
+static char *set_default_to_8(enum default_hex_miner *which)
+{
+	*which = D_HEX8;
+	return NULL;
+}
+#endif
+
+#ifdef USE_HEXMINERM
+static char *set_default_to_m(enum default_hex_miner *which)
+{
+	*which = D_HEXM;
+	return NULL;
+}
+#endif
+
+#ifdef USE_HEXMINERR
+static char *set_default_to_r(enum default_hex_miner *which)
+{
+	*which = D_HEXR;
+	return NULL;
+}
+#endif
+
+#ifdef USE_HEXMINERBE200
+static char *set_default_to_e(enum default_hex_miner *which)
+{
+	*which = D_HEXBE200;
+	return NULL;
+}
+#endif
+
+
+#ifdef USE_HEXMINER3
+static char *set_default_to_3(enum default_hex_miner *which)
+{
+	*which = D_HEX3;
+	return NULL;
+}
+#endif
 static char *set_balance(enum pool_strategy *strategy)
 {
 	*strategy = POOL_BALANCE;
@@ -1076,6 +1215,7 @@ static char *set_null(const char __maybe_unused *arg)
 	return NULL;
 }
 
+
 /* These options are available from config file or commandline */
 static struct opt_table opt_config_table[] = {
 #ifdef USE_ICARUS
@@ -1362,6 +1502,171 @@ static struct opt_table opt_config_table[] = {
 	OPT_WITH_ARG("--klondike-options",
 		     opt_set_charp, NULL, &opt_klondike_options,
 		     "Set klondike options clock:temptarget"),
+#endif
+#ifdef USE_HEXMINERA
+	OPT_WITH_ARG("--hexminera-options",
+		     opt_set_charp, NULL, &opt_hexminera_options,
+		     "Set HEXMinerA options asic_count:freq"),
+	OPT_WITH_ARG("--hexminera-voltage",
+		     opt_set_intval, NULL, &opt_hexminera_core_voltage,
+		     "Set HEXMinerA core voltage, in millivolts"),
+	OPT_WITHOUT_ARG("--set_default_to_a",
+		     set_default_to_a, &default_hex_miner,
+		     "Handle USB detect errors as hexA"),
+#endif
+#ifdef USE_HEXMINERB
+	OPT_WITH_ARG("--hexminerb-options",
+		     opt_set_charp, NULL, &opt_hexminerb_options,
+		     "Set HEXMinerB options asic_count:freq"),
+	OPT_WITH_ARG("--hexminerb-voltage",
+				 opt_set_intval, NULL, &opt_hexminerb_core_voltage,
+		     "Set HEXMinerB core voltage, in millivolts"),
+  OPT_WITHOUT_ARG("--set_default_to_b",
+		     set_default_to_b, &default_hex_miner,
+		     "Handle USB detect errors as hexB"),
+#endif
+#ifdef USE_HEXMINERC
+	OPT_WITH_ARG("--hexminerc-options",
+		     opt_set_charp, NULL, &opt_hexminerc_options,
+		     "Set HEXMinerC options asic_count:freq"),
+	OPT_WITH_ARG("--hexminerc-voltage",
+		     opt_set_intval, NULL, &opt_hexminerc_core_voltage,
+		     "Set HEXMinerC core voltage, in millivolts"),
+  OPT_WITHOUT_ARG("--set_default_to_c",
+		     set_default_to_c, &default_hex_miner,
+		     "Handle USB detect errors as hexC"),
+#endif
+#ifdef USE_HEXMINERU
+	OPT_WITH_ARG("--hexmineru-frequency",
+		     opt_set_intval, NULL, &opt_hexmineru_core_freq,
+		     "Set HEXMinerU frequency"),
+#endif
+#ifdef USE_HEXMINER8
+OPT_WITH_ARG("--hexminer8-options",
+		     opt_set_charp, NULL, &opt_hexminer8_options,
+		     "Set HEXMiner8 options asic_count:freq"),
+	OPT_WITH_ARG("--hexminer8-voltage",
+		     opt_set_intval, NULL, &opt_hexminer8_core_voltage,
+		     "Set HEXMiner8 core voltage, in millivolts"),
+	OPT_WITHOUT_ARG("--set_default_to_8",
+		     set_default_to_8, &default_hex_miner,
+		     "Handle USB detect errors as hex8"),
+	OPT_WITH_ARG("--hexminer8-chip-mask",
+		     opt_set_intval, NULL, &opt_hexminer8_chip_mask,
+		     "Set HEXMiner8 eneable or disable chips"),	     
+	OPT_WITH_ARG("--hexminer8-set-diff-to-one",
+		     opt_set_intval, NULL, &opt_hexminer8_set_config_diff_to_one,
+		     "Set HEXMiner8 ASIC difficulty to one"),	     
+#endif
+#ifdef USE_HEXMINERM
+OPT_WITH_ARG("--hexminerm-options",
+		     opt_set_charp, NULL, &opt_hexminerm_options,
+		     "Set HEXMinerM options asic_count:freq"),
+	OPT_WITH_ARG("--hexminerm-voltage",
+		     opt_set_intval, NULL, &opt_hexminerm_core_voltage,
+		     "Set HEXMinerM core voltage, in millivolts"),
+  OPT_WITH_ARG("--hexminerm-pic-roll",
+		     set_int_0_to_255, NULL, &opt_hexminerm_pic_roll,
+		     "Set HEXMinerM pic work roll"),	 
+	OPT_WITHOUT_ARG("--set_default_to_m",
+		     set_default_to_m, &default_hex_miner,
+		     "Handle USB detect errors as hexM"),
+	OPT_WITH_ARG("--hexminerm-chip-mask",
+		     opt_set_intval, NULL, &opt_hexminerm_chip_mask,
+		     "Set HEXMinerM eneable or disable chips"),	
+  OPT_WITH_ARG("--hexminerm-hw-err-res",
+  			 opt_set_intval, NULL, &opt_hexminerm_hw_err_res,
+		     "Set HEXMinerM reset chip due to N consecutive HW errors"),	 
+	OPT_WITH_ARG("--hexminerm-nonce-timeout-secs",
+		     opt_set_intval, NULL, &opt_hexminerm_nonce_timeout_secs,
+		     "Set HEXMinerM reset chip due to inactivity in seconds"),
+  OPT_WITH_ARG("--hexminerm-reset-below-threshold",
+  			 set_int_0_to_100, NULL, &opt_hexminerm_reset_below_threshold,
+		     "Set HEXMinerM reset board due to low performance"),	 
+	OPT_WITH_ARG("--hexminerm-reset-wait",
+		     set_int_0_to_9999, NULL, &opt_hexminerm_reset_below_threshold_wait,
+		     "Set HEXMinerM wait for 1m speed stats to settle"),   	       
+#endif
+
+#ifdef USE_HEXMINERR
+OPT_WITH_ARG("--hexminerr-options",
+		     opt_set_charp, NULL, &opt_hexminerr_options,
+		     "Set HEXMinerR options asic_count:freq"),
+	OPT_WITH_ARG("--hexminerr-voltage",
+		     opt_set_intval, NULL, &opt_hexminerr_core_voltage,
+		     "Set HEXMinerR core voltage, in millivolts"),
+  OPT_WITH_ARG("--hexminerr-pic-roll",
+		     set_int_0_to_255, NULL, &opt_hexminerr_pic_roll,
+		     "Set HEXMinerR pic work roll"),	 
+	OPT_WITHOUT_ARG("--set_default_to_r",
+		     set_default_to_r, &default_hex_miner,
+		     "Handle USB detect errors as hexR"),
+	OPT_WITH_ARG("--hexminerr-chip-mask",
+		     opt_set_intval, NULL, &opt_hexminerr_chip_mask,
+		     "Set HEXMinerR eneable or disable chips"),	
+	OPT_WITH_ARG("--hexminerr-asic-diff",
+		     opt_set_intval, NULL, &opt_hexminerr_leading_zeros,
+		     "Set HEXMinerR ASIC difficulty"),
+/*		     
+  OPT_WITH_ARG("--hexminerr-hw-err-res",
+  			 opt_set_intval, NULL, &opt_hexminerr_hw_err_res,
+		     "Set HEXMinerR reset chip due to N consecutive HW errors"),	 
+	OPT_WITH_ARG("--hexminerr-nonce-timeout-secs",
+		     opt_set_intval, NULL, &opt_hexminerr_nonce_timeout_secs,
+		     "Set HEXMinerR reset chip due to inactivity in seconds"),		     
+	OPT_WITH_ARG("--hexminerr-reset-below-threshold",
+  			 set_int_0_to_100, NULL, &opt_hexminerr_reset_below_threshold,
+		     "Set HEXMinerR reset board due to low performance"),	 
+	OPT_WITH_ARG("--hexminerr-reset-wait",
+		     set_int_0_to_9999, NULL, &opt_hexminerr_reset_below_threshold_wait,
+		     "Set HEXMinerR wait for 1m speed stats to settle"),            
+*/
+#endif
+
+#ifdef USE_HEXMINERBE200
+OPT_WITH_ARG("--hexminerbe200-options",
+		     opt_set_charp, NULL, &opt_hexminerbe200_options,
+		     "Set HEXMinerBE200 options asic_count:freq"),
+	OPT_WITH_ARG("--hexminerbe200-voltage",
+		     opt_set_intval, NULL, &opt_hexminerbe200_core_voltage,
+		     "Set HEXMinerBE200 core voltage, in millivolts"),
+  OPT_WITH_ARG("--hexminerbe200-pic-roll",
+		     set_int_0_to_255, NULL, &opt_hexminerbe200_pic_roll,
+		     "Set HEXMinerBE200 pic work roll"),	 
+	OPT_WITH_ARG("--hexminerbe200-asic-diff",
+		     opt_set_intval, NULL, &opt_hexminerbe200_diff,
+		     "Set HEXMinerBE200 ASIC difficulty"),
+	OPT_WITH_ARG("--hexminerbe200-chip-mask",
+		      opt_set_intval, NULL, &opt_hexminerbe200_chip_mask,
+		     "Set HEXMinerBE200 eneable or disable chips"),	
+  OPT_WITH_ARG("--hexminerbe200-skip-hw-res",
+         opt_set_intval, NULL, &opt_hexminerbe200_skip_hw_res,
+		     "Enable or disable HEXMinerBE200 automatic reset"),	 	
+  OPT_WITH_ARG("--hexminerbe200-hw-err-res",
+		      opt_set_intval, NULL, &opt_hexminerbe200_hw_err_res,
+		     "Set HEXMinerBE200 reset chip due to N consecutive HW errors"),	 
+	OPT_WITH_ARG("--hexminerbe200-nonce-timeout-secs",
+		     opt_set_intval, NULL, &opt_hexminerbe200_nonce_timeout_secs,
+		     "Set HEXMinerBE200 reset chip due to inactivity in seconds"),	      
+  OPT_WITHOUT_ARG("--set_default_to_be200",
+		     set_default_to_e, &default_hex_miner,
+		     "Handle USB detect errors as hexE"),
+	
+#endif
+
+#ifdef USE_HEXMINER3
+OPT_WITH_ARG("--hexminer3-options",
+		     opt_set_charp, NULL, &opt_hexminer3_options,
+		     "Set HEXMiner3 options asic_count:freq"),
+	OPT_WITH_ARG("--hexminer3-voltage",
+		     opt_set_intval, NULL, &opt_hexminer3_core_voltage,
+		     "Set HEXMiner3 core voltage, in millivolts"),
+	OPT_WITHOUT_ARG("--set_default_to_3",
+		     set_default_to_3, &default_hex_miner,
+		     "Handle USB detect errors as hex3"),
+	OPT_WITH_ARG("--hexminer3-chip-mask",
+		     opt_set_intval, NULL, &opt_hexminer3_chip_mask,
+		     "Set HEXMiner3 eneable or disable chips"),	          
 #endif
 	OPT_WITHOUT_ARG("--load-balance",
 		     set_loadbalance, &pool_strategy,
@@ -1776,6 +2081,33 @@ static char *opt_verusage_and_exit(const char *extra)
 #ifdef USE_MINION
 		"minion "
 #endif
+#ifdef USE_HEXMINERA
+		"hexminera "
+#endif
+#ifdef USE_HEXMINERB
+		"hexminerb "
+#endif
+#ifdef USE_HEXMINERC
+		"hexminerc "
+#endif
+#ifdef USE_HEXMINERU
+		"hexmineru "
+#endif
+#ifdef USE_HEXMINER8
+		"hexminer8 "
+#endif
+#ifdef USE_HEXMINERM
+		"hexminerm "
+#endif
+#ifdef USE_HEXMINERR
+		"hexminerr "
+#endif
+#ifdef USE_HEXMINERBE200
+		"hexminerbe200 "
+#endif
+#ifdef USE_HEXMINER3
+		"hexminer3 "
+#endif
 #ifdef USE_MODMINER
 		"modminer "
 #endif
@@ -1873,6 +2205,7 @@ static int total_work_inc(void)
 	int ret;
 
 	cg_wlock(&control_lock);
+	local_work++;
 	ret = total_work++;
 	cg_wunlock(&control_lock);
 
@@ -1967,8 +2300,11 @@ static void update_gbt(struct pool *pool)
 		if (rc) {
 			applog(LOG_DEBUG, "Successfully retrieved and updated GBT from pool %u %s",
 			       pool->pool_no, pool->rpc_url);
-			if (pool == current_pool())
+			if (pool == current_pool()) {
+				work_pool_update++;
+				clear_pool_work(pool);
 				opt_work_update = true;
+			}
 		} else {
 			applog(LOG_DEBUG, "Successfully retrieved but FAILED to decipher GBT from pool %u %s",
 			       pool->pool_no, pool->rpc_url);
@@ -2029,7 +2365,7 @@ static void gen_gbt_work(struct pool *pool, struct work *work)
 	}
 
 	calc_midstate(work);
-	local_work++;
+	//local_work++;
 	work->pool = pool;
 	work->gbt = true;
 	work->longpoll = false;
@@ -2519,7 +2855,7 @@ static bool curses_active_locked(void)
 
 /* Convert a uint64_t value into a truncated string for displaying with its
  * associated suitable for Mega, Giga etc. Buf array needs to be long enough */
-static void suffix_string(uint64_t val, char *buf, size_t bufsiz, int sigdigits)
+void suffix_string(uint64_t val, char *buf, size_t bufsiz, int sigdigits)
 {
 	const double  dkilo = 1000.0;
 	const uint64_t kilo = 1000ull;
@@ -2720,7 +3056,8 @@ const char blanks[] = "                                        ";
 
 static void curses_print_devstatus(struct cgpu_info *cgpu, int devno, int count)
 {
-	static int devno_width = 1, dawidth = 1, drwidth = 1, hwwidth = 1, wuwidth = 1;
+	//static int devno_width = 1, dawidth = 1, drwidth = 1, hwwidth = 1, wuwidth = 1;
+	static int devno_width = 1, dawidth = 1, drwidth = 1, hwwidth = 1, hwwidthp = 1, prwidthp = 1, wuwidth = 1;
 	char logline[256], unique_id[12];
 	struct timeval now;
 	double dev_runtime, wu;
@@ -2749,20 +3086,28 @@ static void curses_print_devstatus(struct cgpu_info *cgpu, int devno, int count)
 	wu = cgpu->diff1 / dev_runtime * 60;
 
 	wmove(statuswin,devcursor + count, 0);
+#if defined(USE_HEXMINERA) || defined(USE_HEXMINERB) || defined(USE_HEXMINERC) || defined(USE_HEXMINERU) || defined(USE_HEXMINER8) || defined(USE_HEXMINERM) || defined(USE_HEXMINERR) || defined(USE_HEXMINERBE200) || defined(USE_HEXMINER3)
+	double hwp = (cgpu->hw_errors + cgpu->diff1) ?
+		     (double)100 *(double)(cgpu->hw_errors) / (double)(cgpu->hw_errors + cgpu->diff1) : 0;
+		     
+ double prp = (cgpu->diff_accepted + cgpu->diff_rejected) ?
+		     (double)100 *(double)(cgpu->diff_rejected) / (double)(cgpu->diff_rejected + cgpu->diff_accepted) : 0;
+#endif
 	adj_width(devno, &devno_width);
 	if (cgpu->unique_id) {
 		unique_id[8] = '\0';
 		memcpy(unique_id, blanks, 8);
 		strncpy(unique_id, cgpu->unique_id, 8);
 	} else
-		sprintf(unique_id, "%-8d", cgpu->device_id);
-	cg_wprintw(statuswin, " %*d: %s %-8s: ", devno_width, devno, cgpu->drv->name,
+		sprintf(unique_id, "%-3d", cgpu->device_id);
+		unique_id[3] = '\0';
+	cg_wprintw(statuswin, " %*d: %s %-3s: ", devno_width, devno, cgpu->drv->name,
 		   unique_id);
 	logline[0] = '\0';
 	cgpu->drv->get_statline_before(logline, sizeof(logline), cgpu);
 	devstatlen = strlen(logline);
-	if (devstatlen < STATBEFORELEN)
-		strncat(logline, blanks, STATBEFORELEN - devstatlen);
+	if (devstatlen < STATBEFORELEN - 7)
+		strncat(logline, blanks, STATBEFORELEN - 7 - devstatlen);
 	cg_wprintw(statuswin, "%s | ", logline);
 
 
@@ -2813,13 +3158,39 @@ static void curses_print_devstatus(struct cgpu_info *cgpu, int devno, int count)
 		adj_fwidth(cgpu->diff_accepted, &dawidth);
 		adj_fwidth(cgpu->diff_rejected, &drwidth);
 		adj_width(cgpu->hw_errors, &hwwidth);
-		cg_wprintw(statuswin, "A:%*.0f R:%*.0f HW:%*d",
+#if defined(USE_HEXMINERA) || defined(USE_HEXMINERB) || defined(USE_HEXMINERC) || defined(USE_HEXMINERU) || defined(USE_HEXMINER8) || defined(USE_HEXMINERM) || defined(USE_HEXMINERR) || defined(USE_HEXMINERBE200) || defined(USE_HEXMINER3)
+	if(usb_ident(cgpu) == IDENT_HEXA || usb_ident(cgpu) == IDENT_HEXB || usb_ident(cgpu) == IDENT_HEXC || usb_ident(cgpu) == IDENT_HEXU || usb_ident(cgpu) == IDENT_HEX8 || usb_ident(cgpu) == IDENT_HEXM || usb_ident(cgpu) == IDENT_HEXR || usb_ident(cgpu) == IDENT_HEXBE200 || usb_ident(cgpu) == IDENT_HEX3) {
+		adj_width(prp, &prwidthp);
+		adj_width(hwp, &hwwidthp);
+	}
+#endif
+ 	
+ 		adj_width(wu, &wuwidth);
+#if defined(USE_HEXMINERA) || defined(USE_HEXMINERB) || defined(USE_HEXMINERC) || defined(USE_HEXMINERU) || defined(USE_HEXMINER8) || defined(USE_HEXMINERM) || defined(USE_HEXMINERR) || defined(USE_HEXMINERBE200) || defined(USE_HEXMINER3)
+	if(usb_ident(cgpu) == IDENT_HEXA || usb_ident(cgpu) == IDENT_HEXB || usb_ident(cgpu) == IDENT_HEXC || usb_ident(cgpu) == IDENT_HEXU || usb_ident(cgpu) == IDENT_HEX8 || usb_ident(cgpu) == IDENT_HEXM || usb_ident(cgpu) == IDENT_HEXR || usb_ident(cgpu) == IDENT_HEXBE200 || usb_ident(cgpu) == IDENT_HEX3) {
+		cg_wprintw(statuswin, "A:%*.0f R:%*.0f/%*.2f%% HW:%*d/%*.2f%%",
 				dawidth, cgpu->diff_accepted,
 				drwidth, cgpu->diff_rejected,
-				hwwidth, cgpu->hw_errors);
+				prwidthp +1, prp,
+				hwwidth, cgpu->hw_errors,
+				hwwidthp + 1, hwp);
+	} else {
+		cg_wprintw(statuswin, "A:%*.0f R:%*.0f HW:%*d",
+			dawidth, cgpu->diff_accepted,
+			drwidth, cgpu->diff_rejected,
+			hwwidth, cgpu->hw_errors);
 	}
+#else
+ 		cg_wprintw(statuswin, "A:%*.0f R:%*.0f HW:%*d",
+ 				dawidth, cgpu->diff_accepted,
+ 				drwidth, cgpu->diff_rejected,
+ 				hwwidth, cgpu->hw_errors);
+#endif
 
-	logline[0] = '\0';
+ 	}
+ 
+ 	logline[0] = '\0';
+	
 	cgpu->drv->get_statline(logline, sizeof(logline), cgpu);
 	cg_wprintw(statuswin, "%s", logline);
 
@@ -4005,7 +4376,8 @@ static void push_curl_entry(struct curl_ent *ce, struct pool *pool)
 	mutex_unlock(&pool->pool_lock);
 }
 
-static bool stale_work(struct work *work, bool share);
+//static 
+bool stale_work(struct work *work, bool share);
 
 static inline bool should_roll(struct work *work)
 {
@@ -4059,7 +4431,7 @@ void roll_work(struct work *work)
 	ntime = be32toh(*work_ntime);
 	ntime++;
 	*work_ntime = htobe32(ntime);
-	local_work++;
+	//local_work++;
 	work->rolls++;
 	work->nonce = 0;
 	applog(LOG_DEBUG, "Successfully rolled work");
@@ -4132,6 +4504,7 @@ struct work *make_clone(struct work *work)
 
 static bool clone_available(void)
 {
+	return false;
 	struct work *work_clone = NULL, *work, *tmp;
 	bool cloned = false;
 
@@ -4153,7 +4526,7 @@ out_unlock:
 	mutex_unlock(stgd_lock);
 
 	if (cloned) {
-		applog(LOG_DEBUG, "Pushing cloned available work to stage thread");
+		applog(LOG_ERR, "Pushing cloned available work to stage thread");
 		stage_work(work_clone);
 	}
 	return cloned;
@@ -4164,6 +4537,7 @@ out_unlock:
  * the future */
 static struct work *clone_work(struct work *work)
 {
+	return work;
 	int mrs = mining_threads + opt_queue - total_staged();
 	struct work *work_clone;
 	bool cloned;
@@ -4174,7 +4548,7 @@ static struct work *clone_work(struct work *work)
 	cloned = false;
 	work_clone = make_clone(work);
 	while (mrs-- > 0 && can_roll(work) && should_roll(work)) {
-		applog(LOG_DEBUG, "Pushing rolled converted work to stage thread");
+		applog(LOG_ERR, "Pushing rolled converted work to stage thread");
 		stage_work(work_clone);
 		roll_work(work);
 		work_clone = make_clone(work);
@@ -4278,6 +4652,51 @@ struct work *copy_work_noffset(struct work *base_work, int noffset)
 	return work;
 }
 
+#if defined(USE_HEXMINERA) || defined(USE_HEXMINERB) || defined(USE_HEXMINERC) || defined(USE_HEXMINERU) || defined(USE_HEXMINER8) || defined(USE_HEXMINERM) || defined(USE_HEXMINERR) || defined(USE_HEXMINERBE200) || defined(USE_HEXMINER3)
+
+struct work *copy_work_noffset_fast_no_id(struct work *base_work, int noffset)
+{
+	
+  struct work *work = calloc(1, sizeof(struct work));
+
+	if (unlikely(!work))
+		quit(1, "Failed to calloc work in make_work");
+ 
+
+	memcpy(work, base_work, sizeof(struct work));
+	/* Keep the unique new id assigned during make_work to prevent copied
+	 * work from having the same id. */
+	if (base_work->job_id)
+		work->job_id = strdup(base_work->job_id);
+	if (base_work->nonce1)
+		work->nonce1 = strdup(base_work->nonce1);
+	if (base_work->ntime) {
+		/* If we are passed an noffset the binary work->data ntime and
+		 * the work->ntime hex string need to be adjusted. */
+		if (noffset) {
+			uint32_t *work_ntime = (uint32_t *)(work->data + 68);
+			uint32_t ntime = be32toh(*work_ntime);
+
+			ntime += noffset;
+			*work_ntime = htobe32(ntime);
+			work->ntime = offset_ntime(base_work->ntime, noffset);
+		} else
+			work->ntime = strdup(base_work->ntime);
+	} else if (noffset) {
+		uint32_t *work_ntime = (uint32_t *)(work->data + 68);
+		uint32_t ntime = be32toh(*work_ntime);
+
+		ntime += noffset;
+		*work_ntime = htobe32(ntime);
+	}
+	if (base_work->coinbase)
+		work->coinbase = strdup(base_work->coinbase);
+
+	return work;
+}
+
+#endif
+
 void pool_died(struct pool *pool)
 {
 	if (!pool_tset(pool, &pool->idle)) {
@@ -4290,7 +4709,8 @@ void pool_died(struct pool *pool)
 	}
 }
 
-static bool stale_work(struct work *work, bool share)
+//static 
+bool stale_work(struct work *work, bool share)
 {
 	struct timeval now;
 	time_t work_expiry;
@@ -4301,7 +4721,7 @@ static bool stale_work(struct work *work, bool share)
 		return false;
 
 	if (work->work_block != work_block) {
-		applog(LOG_DEBUG, "Work stale due to block mismatch");
+		//applog(LOG_DEBUG, "Work stale due to block mismatch");
 		return true;
 	}
 
@@ -4319,19 +4739,19 @@ static bool stale_work(struct work *work, bool share)
 		bool same_job;
 
 		if (!pool->stratum_active || !pool->stratum_notify) {
-			applog(LOG_DEBUG, "Work stale due to stratum inactive");
+			//applog(LOG_DEBUG, "Work stale due to stratum inactive");
 			return true;
 		}
 
 		same_job = true;
-
-		cg_rlock(&pool->data_lock);
+    cg_wlock(&pool->data_lock);
+	
 		if (strcmp(work->job_id, pool->swork.job_id))
 			same_job = false;
-		cg_runlock(&pool->data_lock);
+		cg_wunlock(&pool->data_lock);
 
 		if (!same_job) {
-			applog(LOG_DEBUG, "Work stale due to stratum job_id mismatch");
+			//applog(LOG_DEBUG, "Work stale due to stratum job_id mismatch");
 			return true;
 		}
 	}
@@ -4345,13 +4765,13 @@ static bool stale_work(struct work *work, bool share)
 
 	cgtime(&now);
 	if ((now.tv_sec - work->tv_staged.tv_sec) >= work_expiry) {
-		applog(LOG_DEBUG, "Work stale due to expiry");
+		//applog(LOG_DEBUG, "Work stale due to expiry");
 		return true;
 	}
 
 	if (opt_fail_only && !share && pool != current_pool() && !work->mandatory &&
 	    pool_strategy != POOL_LOADBALANCE && pool_strategy != POOL_BALANCE) {
-		applog(LOG_DEBUG, "Work stale due to fail only pool mismatch");
+		//applog(LOG_DEBUG, "Work stale due to fail only pool mismatch");
 		return true;
 	}
 
@@ -4560,6 +4980,7 @@ static void discard_stale(void)
  * work restart is required. Returns the value of pthread_cond_timedwait
  * which is zero if the condition was met or ETIMEDOUT if not.
  */
+/*
 int restart_wait(struct thr_info *thr, unsigned int mstime)
 {
 	struct timeval now, then, tdiff;
@@ -4582,12 +5003,12 @@ int restart_wait(struct thr_info *thr, unsigned int mstime)
 
 	return rc;
 }
-
+*/
 static void *restart_thread(void __maybe_unused *arg)
 {
 	struct pool *cp = current_pool();
-	struct cgpu_info *cgpu;
-	int i, mt;
+	//struct cgpu_info *cgpu;
+	//int i, mt;
 
 	pthread_detach(pthread_self());
 
@@ -4597,7 +5018,7 @@ static void *restart_thread(void __maybe_unused *arg)
 
 	/* Discard staged work that is now stale */
 	discard_stale();
-
+/*
 	rd_lock(&mining_thr_lock);
 	mt = mining_threads;
 	rd_unlock(&mining_thr_lock);
@@ -4616,12 +5037,15 @@ static void *restart_thread(void __maybe_unused *arg)
 	mutex_lock(&restart_lock);
 	pthread_cond_broadcast(&restart_cond);
 	mutex_unlock(&restart_lock);
-
+*/
 #ifdef USE_USBUTILS
 	/* Cancels any cancellable usb transfers. Flagged as such it means they
 	 * are usualy waiting on a read result and it's safe to abort the read
 	 * early. */
+	#if defined(USE_HEXMINERA) || defined(USE_HEXMINERB) || defined(USE_HEXMINERC) || defined(USE_HEXMINERU) || defined(USE_HEXMINER8) || defined(USE_HEXMINERM) || defined(USE_HEXMINERR) || defined(USE_HEXMINERBE200) || defined(USE_HEXMINER3)
+	#else
 	cancel_usb_transfers();
+	#endif
 #endif
 	return NULL;
 }
@@ -4639,15 +5063,18 @@ static void restart_threads(void)
 
 static void signal_work_update(void)
 {
+	/*
 	int i;
-
+*/
 	applog(LOG_INFO, "Work update message received");
 
 	cgtime(&update_tv_start);
+	/*
 	rd_lock(&mining_thr_lock);
 	for (i = 0; i < mining_threads; i++)
 		mining_thr[i]->work_update = true;
 	rd_unlock(&mining_thr_lock);
+	*/
 }
 
 static void set_curblock(char *hexstr, unsigned char *bedata)
@@ -4770,7 +5197,8 @@ static bool test_work_current(struct work *work)
 		}
 
 		work->work_block = ++work_block;
-
+    //clear_pool_work(pool);
+    discard_stale();
 		if (work->longpoll) {
 			if (work->stratum) {
 				applog(LOG_NOTICE, "Stratum from pool %d detected new block",
@@ -4810,6 +5238,8 @@ static bool test_work_current(struct work *work)
 #endif
 		if (work->longpoll) {
 			work->work_block = ++work_block;
+			discard_stale();
+			//clear_pool_work(pool);
 			if (shared_strategy() || work->pool == current_pool()) {
 				if (work->stratum) {
 					applog(LOG_NOTICE, "Stratum from pool %d requested work restart",
@@ -4832,19 +5262,19 @@ static int tv_sort(struct work *worka, struct work *workb)
 {
 	return worka->tv_staged.tv_sec - workb->tv_staged.tv_sec;
 }
-
+/*
 static bool work_rollable(struct work *work)
 {
 	return (!work->clone && work->rolltime);
 }
-
+*/
 static bool hash_push(struct work *work)
 {
 	bool rc = true;
 
 	mutex_lock(stgd_lock);
-	if (work_rollable(work))
-		staged_rollable++;
+	//if (work_rollable(work))
+		//staged_rollable++;
 	if (likely(!getq->frozen)) {
 		HASH_ADD_INT(staged_work, id, work);
 		HASH_SORT(staged_work, tv_sort);
@@ -5019,7 +5449,6 @@ void write_config(FILE *fcfg)
 	/* Simple bool,int and char options */
 	for (opt = opt_config_table; opt->type != OPT_END; opt++) {
 		char *p, *name = strdup(opt->names);
-
 		for (p = strtok(name, "|"); p; p = strtok(NULL, "|")) {
 			if (p[1] != '-')
 				continue;
@@ -5068,6 +5497,34 @@ void write_config(FILE *fcfg)
 	}
 
 	/* Special case options */
+#ifdef USE_HEXMINERA
+	if (default_hex_miner == D_HEXA)
+		 fputs(",\n\"set_default_to_a\" : true", fcfg);
+#endif
+#ifdef USE_HEXMINERB
+	if (default_hex_miner == D_HEXB)
+		 fputs(",\n\"set_default_to_b\" : true", fcfg);
+#endif
+#ifdef USE_HEXMINERC
+	if (default_hex_miner == D_HEXC)
+		 fputs(",\n\"set_default_to_c\" : true", fcfg);
+#endif
+#ifdef USE_HEXMINER8
+	if (default_hex_miner == D_HEX8)
+		 fputs(",\n\"set_default_to_8\" : true", fcfg);
+#endif
+#ifdef USE_HEXMINERM
+	if (default_hex_miner == D_HEXM)
+		 fputs(",\n\"set_default_to_m\" : true", fcfg);
+#endif
+#ifdef USE_HEXMINERR
+	if (default_hex_miner == D_HEXR)
+		 fputs(",\n\"set_default_to_r\" : true", fcfg);
+#endif
+#ifdef USE_HEXMINERBE200
+	if (default_hex_miner == D_HEXBE200)
+		 fputs(",\n\"set_default_to_be200\" : true", fcfg);
+#endif
 	if (pool_strategy == POOL_BALANCE)
 		fputs(",\n\"balance\" : true", fcfg);
 	if (pool_strategy == POOL_LOADBALANCE)
@@ -6734,15 +7191,15 @@ static bool work_emptied;
  * be handled. */
 static struct work *hash_pop(bool blocking)
 {
-	struct work *work = NULL, *tmp;
-	int hc;
+	struct work *work = NULL;//, *tmp;
+	//int hc;
 
 	mutex_lock(stgd_lock);
 	if (!HASH_COUNT(staged_work)) {
 		/* Increase the queue if we reach zero and we know we can reach
 		 * the maximum we're asking for. */
 		if (work_filled && max_queue < opt_queue) {
-			max_queue++;
+			if(max_queue < most_devices * 2) max_queue++;
 			work_filled = false;
 		}
 		work_emptied = true;
@@ -6773,18 +7230,18 @@ static struct work *hash_pop(bool blocking)
 		no_work = false;
 	}
 
-	hc = HASH_COUNT(staged_work);
+	//hc = HASH_COUNT(staged_work);
 	/* Find clone work if possible, to allow masters to be reused */
-	if (hc > staged_rollable) {
-		HASH_ITER(hh, staged_work, work, tmp) {
-			if (!work_rollable(work))
-				break;
-		}
-	} else
+	//if (hc > staged_rollable) {
+		//HASH_ITER(hh, staged_work, work, tmp) {
+			//if (!work_rollable(work))
+				//break;
+		//}
+	//} else
 		work = staged_work;
 	HASH_DEL(staged_work, work);
-	if (work_rollable(work))
-		staged_rollable--;
+	//if (work_rollable(work))
+		//staged_rollable--;
 
 	/* Signal the getwork scheduler to look for more work */
 	pthread_cond_signal(&gws_cond);
@@ -6908,7 +7365,7 @@ static void gen_stratum_work(struct pool *pool, struct work *work)
 	memcpy(pool->coinbase + pool->nonce2_offset, &nonce2le, pool->n2size);
 	work->nonce2 = pool->nonce2++;
 	work->nonce2_len = pool->n2size;
-
+  work->job_id = strdup(pool->swork.job_id);
 	/* Downgrade to a read lock to read off the pool variables */
 	cg_dwlock(&pool->data_lock);
 
@@ -6933,7 +7390,7 @@ static void gen_stratum_work(struct pool *pool, struct work *work)
 	work->sdiff = pool->sdiff;
 
 	/* Copy parameters required for share submission */
-	work->job_id = strdup(pool->swork.job_id);
+//	work->job_id = strdup(pool->swork.job_id);
 	work->nonce1 = strdup(pool->nonce1);
 	work->ntime = strdup(pool->ntime);
 	cg_runlock(&pool->data_lock);
@@ -6954,7 +7411,7 @@ static void gen_stratum_work(struct pool *pool, struct work *work)
 	calc_midstate(work);
 	set_target(work->target, work->sdiff);
 
-	local_work++;
+	//local_work++;
 	work->pool = pool;
 	work->stratum = true;
 	work->nonce = 0;
@@ -7095,7 +7552,7 @@ static void gen_solo_work(struct pool *pool, struct work *work)
 
 	calc_midstate(work);
 
-	local_work++;
+	//local_work++;
 	work->gbt = true;
 	work->pool = pool;
 	work->nonce = 0;
@@ -7138,7 +7595,7 @@ struct work *get_work(struct thr_info *thr, const int thr_id)
 	time_t diff_t;
 
 	thread_reportout(thr);
-	applog(LOG_DEBUG, "Popping work from get queue to get work");
+	//applog(LOG_DEBUG, "Popping work from get queue to get work");
 	diff_t = time(NULL);
 	while (!work) {
 		work = hash_pop(true);
@@ -7152,10 +7609,10 @@ struct work *get_work(struct thr_info *thr, const int thr_id)
 	 * the device's last valid work to not make outages appear to be
 	 * device failures. */
 	if (diff_t > 0) {
-		applog(LOG_DEBUG, "Get work blocked for %d seconds", (int)diff_t);
+	//	applog(LOG_DEBUG, "Get work blocked for %d seconds", (int)diff_t);
 		cgpu->last_device_valid_work += diff_t;
 	}
-	applog(LOG_DEBUG, "Got work from get queue to get work for thread %d", thr_id);
+	//applog(LOG_DEBUG, "Got work from get queue to get work for thread %d", thr_id);
 
 	work->thr_id = thr_id;
 	if (opt_benchmark)
@@ -7239,6 +7696,18 @@ void inc_hw_errors(struct thr_info *thr)
 	thr->cgpu->drv->hw_error(thr);
 }
 
+void inc_hw_errors_hex8(struct thr_info *thr, int diff)
+{
+	applog(LOG_INFO, "%s%d: invalid nonce - HW error", thr->cgpu->drv->name,
+	       thr->cgpu->device_id);
+
+	mutex_lock(&stats_lock);
+	hw_errors-=diff;
+	thr->cgpu->hw_errors-=diff;
+	mutex_unlock(&stats_lock);
+
+	thr->cgpu->drv->hw_error(thr);
+}
 /* Fills in the work nonce and builds the output data in work->hash */
 static void rebuild_nonce(struct work *work, uint32_t nonce)
 {
@@ -7285,9 +7754,23 @@ static void update_work_stats(struct thr_info *thr, struct work *work)
 	}
 
 	mutex_lock(&stats_lock);
+#if defined(USE_HEXMINERA) || defined(USE_HEXMINERB) || defined(USE_HEXMINERC) || defined(USE_HEXMINERU) || defined(USE_HEXMINER8) || defined(USE_HEXMINERM) || defined(USE_HEXMINERR) || defined(USE_HEXMINERBE200) || defined(USE_HEXMINER3)
+if(work->ping) {
 	total_diff1 += work->device_diff;
 	thr->cgpu->diff1 += work->device_diff;
 	work->pool->diff1 += work->device_diff;
+ } else {
+ 	total_diff1 += work->work_difficulty;
+	thr->cgpu->diff1 += work->work_difficulty;
+	work->pool->diff1 += work->work_difficulty;
+ }
+#else
+	total_diff1 += work->device_diff;
+	thr->cgpu->diff1 += work->device_diff;
+	work->pool->diff1 += work->device_diff;
+#endif
+
+	
 	thr->cgpu->last_device_valid_work = time(NULL);
 	mutex_unlock(&stats_lock);
 }
@@ -7308,6 +7791,47 @@ bool submit_tested_work(struct thr_info *thr, struct work *work)
 	submit_work_async(work_out);
 	return true;
 }
+
+#if defined(USE_HEXMINERA) || defined(USE_HEXMINERB) || defined(USE_HEXMINERC) || defined(USE_HEXMINERU) || defined(USE_HEXMINER8) || defined(USE_HEXMINERM) || defined(USE_HEXMINERR) || defined(USE_HEXMINERBE200) || defined(USE_HEXMINER3)
+
+bool submit_tested_work_fast_clone(struct thr_info *thr, struct work *work, bool diff1)
+{
+	struct work *work_sub;
+	update_work_stats(thr, work);
+	
+  if(diff1) {
+		if (!fulltest(work->hash, work->target)) {
+			applog(LOG_INFO, "%s %d: Share above target",
+				thr->cgpu->drv->name, thr->cgpu->device_id);
+			return false;
+		}
+	}
+	
+  work_sub = copy_work_noffset_fast_no_id (work, 0);
+  
+	submit_work_async(work_sub);
+	return true;
+}
+
+bool submit_tested_work_no_clone(struct thr_info *thr, struct work *work, bool diff1)
+{
+
+	update_work_stats(thr, work);
+	
+  if(diff1) {
+		if (!fulltest(work->hash, work->target)) {
+			applog(LOG_INFO, "%s %d: Share above target",
+				thr->cgpu->drv->name, thr->cgpu->device_id);
+				free_work (work);
+			return false;
+		}
+	}
+	
+	submit_work_async(work);
+	return true;
+}
+
+#endif
 
 /* Returns true if nonce for work was a valid share */
 bool submit_nonce(struct thr_info *thr, struct work *work, uint32_t nonce)
@@ -7404,9 +7928,10 @@ static void hash_sole_work(struct thr_info *mythr)
 	while (likely(!cgpu->shutdown)) {
 		struct work *work = get_work(mythr, thr_id);
 		int64_t hashes;
-
+		
 		mythr->work_restart = false;
 		cgpu->new_work = true;
+		
 
 		cgtime(&tv_workstart);
 		work->nonce = 0;
@@ -7769,6 +8294,7 @@ void flush_queue(struct cgpu_info *cgpu)
 		free_work(work);
 		applog(LOG_DEBUG, "Discarded queued work item");
 	}
+	
 }
 
 /* This version of hash work is for devices that are fast enough to always
@@ -7786,17 +8312,19 @@ void hash_queued_work(struct thr_info *mythr)
 	while (likely(!cgpu->shutdown)) {
 		struct timeval diff;
 		int64_t hashes;
-
+    
 		mythr->work_update = false;
-
+  //	if(mythr->work_restart)
+  //applog(LOG_ERR,"mythr->work_restart cg 11");
 		fill_queue(mythr, cgpu, drv, thr_id);
 
 		hashes = drv->scanwork(mythr);
 
 		/* Reset the bool here in case the driver looks for it
 		 * synchronously in the scanwork loop. */
+		
 		mythr->work_restart = false;
-
+  	
 		if (unlikely(hashes == -1 )) {
 			applog(LOG_ERR, "%s %d failure, disabling!", drv->name, cgpu->device_id);
 			cgpu->deven = DEV_DISABLED;
@@ -7818,8 +8346,8 @@ void hash_queued_work(struct thr_info *mythr)
 		if (unlikely(mythr->pause || cgpu->deven != DEV_ENABLED))
 			mt_disable(mythr, thr_id, drv);
 
-		if (mythr->work_update)
-			drv->update_work(cgpu);
+ 		//if (mythr->work_update)
+			//drv->update_work(cgpu);
 	}
 	cgpu->deven = DEV_DISABLED;
 }
@@ -7869,8 +8397,8 @@ void hash_driver_work(struct thr_info *mythr)
 		if (unlikely(mythr->pause || cgpu->deven != DEV_ENABLED))
 			mt_disable(mythr, thr_id, drv);
 
-		if (mythr->work_update)
-			drv->update_work(cgpu);
+   // if (mythr->work_update)
+			//drv->update_work(cgpu);
 	}
 	cgpu->deven = DEV_DISABLED;
 }
@@ -8482,7 +9010,12 @@ static void *watchdog_thread(void __maybe_unused *userdata)
 				dev_error(cgpu, REASON_DEV_SICK_IDLE_60);
 				if (opt_restart) {
 					applog(LOG_ERR, "%s: Attempting to restart", dev_str);
-					reinit_device(cgpu);
+				reinit_device(cgpu);
+			/*
+		 	  	cgpu->deven = DEV_DISABLED;
+				  dev_error(cgpu, REASON_THREAD_ZERO_HASH); 
+					cgpu->shutdown = true;
+			*/      
 				}
 			} else if (cgpu->status == LIFE_SICK && (now.tv_sec - thr->last.tv_sec > WATCHDOG_DEAD_TIME)) {
 				cgpu->status = LIFE_DEAD;
@@ -8494,8 +9027,8 @@ static void *watchdog_thread(void __maybe_unused *userdata)
 				   (cgpu->status == LIFE_SICK || cgpu->status == LIFE_DEAD)) {
 				/* Attempt to restart a GPU that's sick or dead once every minute */
 				cgtime(&thr->sick);
-				if (opt_restart)
-					reinit_device(cgpu);
+		 		if (opt_restart)
+						reinit_device(cgpu);      
 			}
 		}
 	}
@@ -8600,9 +9133,12 @@ void print_summary(void)
 static void clean_up(bool restarting)
 {
 #ifdef USE_USBUTILS
-	usb_polling = false;
-	pthread_join(usb_poll_thread, NULL);
-        libusb_exit(NULL);
+ usb_polling = false;
+#if defined(USE_HEXMINERA) || defined(USE_HEXMINERB) || defined(USE_HEXMINERC) || defined(USE_HEXMINERU) || defined(USE_HEXMINER8) || defined(USE_HEXMINERM) || defined(USE_HEXMINERR) || defined(USE_HEXMINERBE200) || defined(USE_HEXMINER3)
+#else
+ pthread_join(usb_poll_thread, NULL);      
+#endif
+ libusb_exit(NULL);
 #endif
 
 	cgtime(&total_tv_end);
@@ -9266,6 +9802,8 @@ static void probe_pools(void)
 #define DRIVER_DRV_DETECT_ALL(X) X##_drv.drv_detect(false);
 
 #ifdef USE_USBUTILS
+#if defined(USE_HEXMINERA) || defined(USE_HEXMINERB)  || defined(USE_HEXMINERC) || defined(USE_HEXMINERU) || defined(USE_HEXMINER8) || defined(USE_HEXMINERM) || defined(USE_HEXMINERR) || defined(USE_HEXMINERBE200) || defined(USE_HEXMINER3)
+#else
 static void *libusb_poll_thread(void __maybe_unused *arg)
 {
 	struct timeval tv_end = {1, 0};
@@ -9286,7 +9824,7 @@ static void *libusb_poll_thread(void __maybe_unused *arg)
 
 	return NULL;
 }
-
+#endif
 static void initialise_usb(void) {
 	int err = libusb_init(NULL);
 
@@ -9297,7 +9835,10 @@ static void initialise_usb(void) {
 	}
 	initialise_usblocks();
 	usb_polling = true;
+	#if defined(USE_HEXMINERA) || defined(USE_HEXMINERB)  || defined(USE_HEXMINERC) || defined(USE_HEXMINERU) || defined(USE_HEXMINER8) || defined(USE_HEXMINERM) || defined(USE_HEXMINERR) || defined(USE_HEXMINERBE200) || defined(USE_HEXMINER3)
+	#else
 	pthread_create(&usb_poll_thread, NULL, libusb_poll_thread, NULL);
+	#endif
 }
 #else
 #define initialise_usb() {}
@@ -9345,11 +9886,11 @@ int main(int argc, char *argv[])
 	mutex_init(&lp_lock);
 	if (unlikely(pthread_cond_init(&lp_cond, NULL)))
 		early_quit(1, "Failed to pthread_cond_init lp_cond");
-
+/*
 	mutex_init(&restart_lock);
 	if (unlikely(pthread_cond_init(&restart_cond, NULL)))
 		early_quit(1, "Failed to pthread_cond_init restart_cond");
-
+*/
 	if (unlikely(pthread_cond_init(&gws_cond, NULL)))
 		early_quit(1, "Failed to pthread_cond_init gws_cond");
 
@@ -9733,8 +10274,8 @@ begin_bench:
 
 		/* If the primary pool is a getwork pool and cannot roll work,
 		 * try to stage one extra work per mining thread */
-		if (!pool_localgen(cp) && !staged_rollable)
-			max_staged += mining_threads;
+		//if (!pool_localgen(cp) && !staged_rollable)
+			//max_staged += mining_threads;
 
 		mutex_lock(stgd_lock);
 		ts = __total_staged();
@@ -9745,7 +10286,7 @@ begin_bench:
 		/* Wait until hash_pop tells us we need to create more work */
 		if (ts > max_staged) {
 			if (work_emptied && max_queue < opt_queue) {
-				max_queue++;
+				if(max_queue < most_devices * 2) max_queue++;
 				work_emptied = false;
 			}
 			work_filled = true;
@@ -9754,12 +10295,12 @@ begin_bench:
 		}
 		mutex_unlock(stgd_lock);
 
-		if (ts > max_staged) {
+		if (ts > max_staged ) {
 			/* Keeps slowly generating work even if it's not being
 			 * used to keep last_getwork incrementing and to see
 			 * if pools are still alive. */
 			if (work_emptied && max_queue < opt_queue) {
-				max_queue++;
+				if(max_queue < most_devices * 2) max_queue++;
 				work_emptied = false;
 			}
 			work_filled = true;

@@ -229,6 +229,15 @@ static inline int fsync (int fd)
 	DRIVER_ADD_COMMAND(modminer)
 
 #define ASIC_PARSE_COMMANDS(DRIVER_ADD_COMMAND) \
+	DRIVER_ADD_COMMAND(hexminera) \
+	DRIVER_ADD_COMMAND(hexminerb) \
+	DRIVER_ADD_COMMAND(hexminerc) \
+	DRIVER_ADD_COMMAND(hexminer8) \
+	DRIVER_ADD_COMMAND(hexminerm) \
+	DRIVER_ADD_COMMAND(hexminerr) \
+	DRIVER_ADD_COMMAND(hexminerbe200) \
+	DRIVER_ADD_COMMAND(hexminer3) \
+	DRIVER_ADD_COMMAND(hexmineru) \
 	DRIVER_ADD_COMMAND(ants1) \
 	DRIVER_ADD_COMMAND(ants2) \
 	DRIVER_ADD_COMMAND(avalon) \
@@ -280,6 +289,20 @@ enum pool_strategy {
 	POOL_LOADBALANCE,
 	POOL_BALANCE,
 };
+#if defined(USE_HEXMINERA) || defined(USE_HEXMINERB) || defined(USE_HEXMINERC) || defined(USE_HEXMINERU) || defined(USE_HEXMINER8) || defined(USE_HEXMINERM) || defined(USE_HEXMINERR) || defined(USE_HEXMINERBE200) || defined(USE_HEXMINER3)
+
+enum default_hex_miner {
+	D_HEXA,
+	D_HEXB,
+	D_HEXC,
+	D_HEX8,
+	D_HEX3,
+	D_HEXM,
+	D_HEXR,
+	D_HEXBE200,
+};
+extern enum default_hex_miner default_hex_miner;
+#endif
 
 #define TOP_STRATEGY (POOL_BALANCE)
 
@@ -431,6 +454,12 @@ struct cgpu_info {
 	struct cg_usb_device *usbdev;
 	struct cg_usb_info usbinfo;
 	bool blacklisted;
+#endif
+#ifdef USE_HEXMINERU
+	// http://ww1.microchip.com/downloads/en/DeviceDoc/22288A.pdf pg 34
+	uint8_t cfg_spi[0x11];
+	// http://ww1.microchip.com/downloads/en/DeviceDoc/22288A.pdf pg 40
+	uint8_t cfg_gpio[0xf];
 #endif
 #if defined(USE_AVALON) || defined(USE_AVALON2)
 	struct work **works;
@@ -702,7 +731,9 @@ extern void _quit(int status);
  * So, e.g. use it to track down a deadlock - after a reproducable deadlock occurs
  * ... Of course if the API code itself deadlocks, it wont help :)
  */
+//Always off production 
 #define LOCK_TRACKING 0
+//Always off production
 
 #if LOCK_TRACKING
 enum cglock_typ {
@@ -960,6 +991,7 @@ struct pool;
 #define API_MCAST_ADDR "224.0.0.75"
 
 extern bool opt_work_update;
+extern unsigned int work_pool_update;
 extern bool opt_protocol;
 extern bool have_longpoll;
 extern char *opt_kernel_path;
@@ -1038,6 +1070,31 @@ extern char *opt_minion_spireset;
 extern int opt_minion_spisleep;
 extern int opt_minion_spiusec;
 extern char *opt_minion_temp;
+#endif
+
+#ifdef USE_HEXMINERA
+extern char *opt_hexminera_options;
+#endif
+#ifdef USE_HEXMINERB
+extern char *opt_hexminerb_options;
+#endif
+#ifdef USE_HEXMINERC
+extern char *opt_hexminerc_options;
+#endif
+#ifdef USE_HEXMINER8
+extern char *opt_hexminer8_options;
+#endif
+#ifdef USE_HEXMINERM
+extern char *opt_hexminerm_options;
+#endif
+#ifdef USE_HEXMINERR
+extern char *opt_hexminerr_options;
+#endif
+#ifdef USE_HEXMINERBE200
+extern char *opt_hexminerbe200_options;
+#endif
+#ifdef USE_HEXMINER3
+extern char *opt_hexminer3_options;
 #endif
 #ifdef USE_USBUTILS
 extern char *opt_usb_select;
@@ -1393,6 +1450,10 @@ struct work {
 	struct timeval	tv_work_start;
 	struct timeval	tv_work_found;
 	char		getwork_mode;
+	
+#if defined(USE_HEXMINERA) || defined(USE_HEXMINERB) || defined(USE_HEXMINERC) || defined(USE_HEXMINERU) || defined(USE_HEXMINER8) || defined(USE_HEXMINERM) || defined(USE_HEXMINERR) || defined(USE_HEXMINERBE200) || defined(USE_HEXMINER3)
+	bool ping;
+#endif
 };
 
 #ifdef USE_MODMINER
@@ -1440,6 +1501,9 @@ extern void inc_hw_errors(struct thr_info *thr);
 extern bool test_nonce(struct work *work, uint32_t nonce);
 extern bool test_nonce_diff(struct work *work, uint32_t nonce, double diff);
 extern bool submit_tested_work(struct thr_info *thr, struct work *work);
+#if defined(USE_HEXMINERA) || defined(USE_HEXMINERB) || defined(USE_HEXMINERC) || defined(USE_HEXMINERU)  || defined(USE_HEXMINER8) || defined(USE_HEXMINERM) || defined(USE_HEXMINERR) || defined(USE_HEXMINERBE200) || defined(USE_HEXMINER3)
+extern bool submit_tested_work_no_clone(struct thr_info *thr, struct work *work, bool diff1);
+#endif
 extern bool submit_nonce(struct thr_info *thr, struct work *work, uint32_t nonce);
 extern bool submit_noffset_nonce(struct thr_info *thr, struct work *work, uint32_t nonce,
 			  int noffset);

@@ -1904,8 +1904,11 @@ out_unlock:
 	/* A notify message is the closest stratum gets to a getwork */
 	pool->getwork_requested++;
 	total_getworks++;
-	if (pool == current_pool())
+	if (pool == current_pool()) {
 		opt_work_update = true;
+		clear_pool_work(pool);
+		work_pool_update++;
+	}
 out:
 	return ret;
 }
@@ -1925,7 +1928,8 @@ static bool parse_diff(struct pool *pool, json_t *val)
 
 	if (old_diff != diff) {
 		int idiff = diff;
-
+    clear_pool_work(pool);
+    work_pool_update++;
 		if ((double)idiff == diff)
 			applog(LOG_NOTICE, "Pool %d difficulty changed to %d",
 			       pool->pool_no, idiff);
