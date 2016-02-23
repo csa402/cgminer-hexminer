@@ -1314,6 +1314,7 @@ struct pool {
 
 	/* Stratum variables */
 	char *stratum_url;
+	bool extranonce_subscribe;
 	char *stratum_port;
 	SOCKETTYPE sock;
 	char *sockbuf;
@@ -1375,6 +1376,7 @@ struct pool {
 	char bbversion[12];
 	char nbit[12];
 	char ntime[12];
+	double next_diff;
 	double sdiff;
 
 	struct timeval tv_lastwork;
