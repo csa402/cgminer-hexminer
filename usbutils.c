@@ -2505,9 +2505,9 @@ reldame:
 cldame:
 #ifdef LINUX
 	libusb_attach_kernel_driver(cgusb->handle, THISIF(found, ifinfo));
-
-nokernel:
 #endif
+nokernel:
+
 	cg_wlock(&cgusb_fd_lock);
 	libusb_close(cgusb->handle);
 	cgusb->handle = NULL;
